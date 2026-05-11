@@ -1,0 +1,783 @@
+/* dashboard.css — Painel SaaS Launchy
+   Base tokens e reset vêm de styles.css */
+
+/* ── Layout ─────────────────────────────────────────────────────── */
+.db-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+.db-sidebar {
+  width: 248px;
+  min-width: 248px;
+  height: 100vh;
+  background: var(--bg-alt);
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.db-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 18px 16px;
+  border-bottom: 1px solid var(--line);
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  flex-shrink: 0;
+}
+
+.db-nav {
+  flex: 1;
+  padding: 10px 10px 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.db-nav-sect {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--fg-3);
+  padding: 16px 8px 6px;
+}
+
+.db-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--fg-2);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 450;
+  text-align: left;
+  transition: background .12s, color .12s;
+  user-select: none;
+}
+
+.db-nav-item:hover {
+  background: rgba(0, 0, 0, .06);
+  color: var(--fg);
+}
+
+[data-theme="dark"] .db-nav-item:hover {
+  background: rgba(255, 255, 255, .05);
+}
+
+.db-nav-item.active {
+  background: var(--bg);
+  color: var(--fg);
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+}
+
+.db-nav-ic {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-style: normal;
+  flex-shrink: 0;
+  color: var(--fg-3);
+}
+
+.db-nav-item.active .db-nav-ic {
+  background: var(--accent);
+  color: #052b15;
+}
+
+/* User section */
+.db-user-sect {
+  padding: 12px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.db-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background .12s;
+}
+
+.db-user-pill:hover { background: var(--line-2); }
+
+.db-av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .db-av { color: var(--accent); }
+
+.db-uname {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.db-uplan {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--accent-deep);
+}
+
+[data-theme="dark"] .db-uplan { color: var(--accent); }
+
+/* ── Right column ─────────────────────────────────────────────────── */
+.db-right {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────── */
+.db-topbar {
+  height: 60px;
+  min-height: 60px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.db-topbar-title {
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+
+.db-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.db-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  transition: background .12s, border-color .12s, color .12s;
+}
+
+.db-icon-btn:hover {
+  background: var(--bg-alt);
+  border-color: var(--fg);
+  color: var(--fg);
+}
+
+.db-topbar-av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 12px;
+  margin-left: 4px;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .db-topbar-av { color: var(--accent); }
+
+/* ── Content area ────────────────────────────────────────────────── */
+.db-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 36px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+}
+
+/* ── Checklist view ──────────────────────────────────────────────── */
+.db-checklist-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 22px;
+}
+
+.db-checklist-h2 {
+  font-size: clamp(22px, 2vw, 28px) !important;
+  letter-spacing: -0.025em !important;
+  margin: 8px 0 6px !important;
+  line-height: 1.1 !important;
+}
+
+.db-checklist-sub {
+  font-size: 14px;
+  color: var(--fg-3);
+  margin: 0;
+}
+
+.db-checklist-pct {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.db-pct-num {
+  display: block;
+  font-size: 42px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.db-pct-label {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-3);
+  margin-top: 4px;
+}
+
+/* Progress bar */
+.db-pbar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.db-pbar {
+  flex: 1;
+  height: 6px;
+  background: var(--line-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.db-pfill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width .8s cubic-bezier(.2, .8, .2, 1);
+}
+
+.db-pbar-hint {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+
+/* Step list */
+.db-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Step card */
+.db-step {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--bg);
+  overflow: hidden;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.db-step--current {
+  border-color: color-mix(in oklab, var(--accent) 40%, transparent);
+  background: var(--accent-soft);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 8%, transparent);
+}
+
+.db-step--todo { opacity: .85; }
+
+.db-step-hd {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.db-step-num {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--fg-3);
+  width: 20px;
+  flex-shrink: 0;
+}
+
+/* Check circle */
+.db-step-chk {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  transition: all .2s;
+  position: relative;
+}
+
+.db-step-chk--done {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.db-step-chk--done::after {
+  content: "✓";
+  font-size: 11px;
+  font-weight: 700;
+  color: #052b15;
+}
+
+.db-step-chk--current { border-color: var(--accent); }
+
+.db-step-chk--current::after {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulseDot 1.4s ease-in-out infinite;
+}
+
+.db-step-chk--todo { opacity: .5; }
+
+.db-step-info { flex: 1; min-width: 0; }
+
+.db-step-title {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--fg);
+  letter-spacing: -0.01em;
+  transition: color .12s;
+}
+
+.db-step--done .db-step-title { color: var(--fg-3); }
+
+.db-step-sub {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-3);
+  margin-top: 2px;
+}
+
+/* Pills */
+.db-pill {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.db-pill--accent { background: var(--accent); color: #052b15; }
+.db-pill--muted  { background: var(--bg-alt); color: var(--fg-3); }
+
+/* Expanded body */
+.db-step-body {
+  padding: 2px 18px 18px 52px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.db-step-desc {
+  font-size: 14px;
+  color: var(--fg-2);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Provider card inside step */
+.db-prov-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  flex-wrap: wrap;
+}
+
+.db-prov-card--active {
+  border-color: color-mix(in oklab, var(--accent) 30%, transparent);
+}
+
+.db-prov-ph {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent-soft), var(--bg-alt));
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent-deep);
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .db-prov-ph { color: var(--accent); }
+
+.db-prov-info { flex: 1; min-width: 0; }
+
+.db-prov-name {
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+.db-prov-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--fg-3);
+  flex-wrap: wrap;
+}
+
+.db-prov-cat {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.db-prov-rating { color: var(--accent-deep); font-weight: 600; }
+[data-theme="dark"] .db-prov-rating { color: var(--accent); }
+
+.db-verified {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+[data-theme="dark"] .db-verified { color: var(--accent); }
+
+.db-prov-deal {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent-deep);
+  margin-top: 5px;
+}
+
+[data-theme="dark"] .db-prov-deal { color: var(--accent); }
+
+/* ── Prestadores view ────────────────────────────────────────────── */
+.db-prest-top { margin-bottom: 20px; }
+
+.db-prest-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.db-filter-btn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--fg-2);
+  border-radius: 999px;
+  padding: 6px 16px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+
+.db-filter-btn:hover { border-color: var(--fg); color: var(--fg); }
+
+.db-filter-btn.active {
+  background: var(--fg);
+  color: var(--bg);
+  border-color: var(--fg);
+}
+
+.db-prest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.db-prest-card {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: transform .2s ease, border-color .2s ease;
+}
+
+.db-prest-card:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in oklab, var(--accent) 40%, var(--line));
+}
+
+.db-pc-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.db-pc-ph {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent-soft), var(--bg-alt));
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--accent-deep);
+}
+
+[data-theme="dark"] .db-pc-ph { color: var(--accent); }
+
+.db-verified-badge {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+[data-theme="dark"] .db-verified-badge { color: var(--accent); }
+
+.db-pc-name { font-weight: 600; font-size: 16px; letter-spacing: -0.01em; color: var(--fg); }
+
+.db-pc-cat {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--fg-3);
+}
+
+.db-pc-desc {
+  font-size: 13.5px;
+  color: var(--fg-2);
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+}
+
+.db-pc-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.db-pc-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+.db-pc-rating { color: var(--accent-deep); font-weight: 600; }
+[data-theme="dark"] .db-pc-rating { color: var(--accent); }
+.db-pc-reviews { font-size: 11px; }
+
+.db-pc-deal {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: var(--accent-deep);
+  background: var(--accent-soft);
+  padding: 3px 9px;
+  border-radius: 999px;
+}
+
+[data-theme="dark"] .db-pc-deal { color: var(--accent); }
+
+.db-pc-btn { width: 100%; justify-content: center; margin-top: 4px; }
+
+/* ── Coming soon ─────────────────────────────────────────────────── */
+.db-coming-soon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: 14px;
+  text-align: center;
+  color: var(--fg-3);
+}
+
+.db-cs-icon { font-size: 36px; opacity: .4; }
+
+.db-coming-soon h3 { font-size: 20px; font-weight: 500; color: var(--fg-2); margin: 0; }
+
+.db-coming-soon p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 28ch;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .db-sidebar { display: none; }
+  .db-content { padding: 20px; }
+}
+
+/* ── Provider Modal ──────────────────────────────────────────────── */
+.pm-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: pmFadeIn .15s ease;
+}
+
+@keyframes pmFadeIn {
+  from { opacity: 0 }
+  to   { opacity: 1 }
+}
+
+.pm-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, .3);
+  animation: pmSlideUp .18s cubic-bezier(.2,.8,.2,1);
+}
+
+[data-theme="dark"] .pm-card { background: var(--bg-alt); }
+
+@keyframes pmSlideUp {
+  from { transform: translateY(16px); opacity: 0 }
+  to   { transform: translateY(0);    opacity: 1 }
+}
+
+.pm-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  font-size: 11px;
+  display: grid;
+  place-items: center;
+  transition: background .12s, color .12s;
+}
+.pm-close:hover { background: var(--bg-alt); color: var(--fg); }
+
+.pm-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.pm-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent-soft), var(--bg-alt));
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.pm-name { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--fg); }
+.pm-cat  { font-family: var(--font-mono); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--fg-3); margin-top: 2px; }
+
+.pm-desc {
+  font-size: 14px;
+  color: var(--fg-2);
+  line-height: 1.6;
+  margin: 0 0 18px;
+}
+
+.pm-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  background: var(--bg-alt);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+[data-theme="dark"] .pm-meta { background: var(--bg); }
+
+.pm-meta-item { display: flex; justify-content: space-between; align-items: center; }
+.pm-meta-label { font-family: var(--font-mono); font-size: 11px; color: var(--fg-3); text-transform: uppercase; letter-spacing: .05em; }
+.pm-meta-val { font-size: 13.5px; font-weight: 500; color: var(--fg); }
+
+.pm-actions { display: flex; gap: 10px; }
