@@ -359,7 +359,17 @@ function ChecklistView({ onOpenModal, doneIds, onToggle }) {
 
 function PrestadoresView({ onOpenModal }) {
   const [cat, setCat] = useState('Todos')
-  const filtered = cat === 'Todos' ? ALL_PROVIDERS : ALL_PROVIDERS.filter(p => p.cat === cat)
+  const [providers, setProviders] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.from('providers').select('*').order('name').then(({ data }) => {
+      setProviders(data || [])
+      setLoading(false)
+    })
+  }, [])
+
+  const filtered = cat === 'Todos' ? providers : providers.filter(p => p.cat === cat)
 
   return (
     <div>
@@ -373,21 +383,21 @@ function PrestadoresView({ onOpenModal }) {
 
       <div className="db-prest-filters">
         {CATS.map(c => (
-          <button
-            key={c}
-            className={`db-filter-btn${cat === c ? ' active' : ''}`}
-            onClick={() => setCat(c)}
-          >
+          <button key={c} className={`db-filter-btn${cat === c ? ' active' : ''}`} onClick={() => setCat(c)}>
             {c}
           </button>
         ))}
       </div>
 
-      <div className="db-prest-grid">
-        {filtered.map(p => (
-          <ProviderCard key={p.name} provider={p} compact={false} onOpenModal={onOpenModal} />
-        ))}
-      </div>
+      {loading ? (
+        <p style={{ color: 'var(--fg-3)', fontSize: 14, marginTop: 24 }}>Carregando prestadores…</p>
+      ) : (
+        <div className="db-prest-grid">
+          {filtered.map(p => (
+            <ProviderCard key={p.id} provider={{ ...p, desc: p.description }} compact={false} onOpenModal={onOpenModal} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -606,7 +616,17 @@ export default function Dashboard() {
 // Category view (prestadores pre-filtered)
 function PrestadoresWithCat({ initialCat, onOpenModal }) {
   const [cat, setCat] = useState(initialCat)
-  const filtered = cat === 'Todos' ? ALL_PROVIDERS : ALL_PROVIDERS.filter(p => p.cat === cat)
+  const [providers, setProviders] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.from('providers').select('*').order('name').then(({ data }) => {
+      setProviders(data || [])
+      setLoading(false)
+    })
+  }, [])
+
+  const filtered = cat === 'Todos' ? providers : providers.filter(p => p.cat === cat)
 
   return (
     <div>
@@ -620,21 +640,21 @@ function PrestadoresWithCat({ initialCat, onOpenModal }) {
 
       <div className="db-prest-filters">
         {CATS.map(c => (
-          <button
-            key={c}
-            className={`db-filter-btn${cat === c ? ' active' : ''}`}
-            onClick={() => setCat(c)}
-          >
+          <button key={c} className={`db-filter-btn${cat === c ? ' active' : ''}`} onClick={() => setCat(c)}>
             {c}
           </button>
         ))}
       </div>
 
-      <div className="db-prest-grid">
-        {filtered.map(p => (
-          <ProviderCard key={p.name} provider={p} compact={false} onOpenModal={onOpenModal} />
-        ))}
-      </div>
+      {loading ? (
+        <p style={{ color: 'var(--fg-3)', fontSize: 14, marginTop: 24 }}>Carregando prestadores…</p>
+      ) : (
+        <div className="db-prest-grid">
+          {filtered.map(p => (
+            <ProviderCard key={p.id} provider={{ ...p, desc: p.description }} compact={false} onOpenModal={onOpenModal} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
