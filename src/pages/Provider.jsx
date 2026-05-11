@@ -95,20 +95,44 @@ function ProviderModal({ provider, onClose }) {
   )
 }
 
-function PerfilView({ user }) {
+function PerfilView({ user, onProfileSaved }) {
   const [form, setForm] = useState({
-    nome:    user?.name     || 'Ana Lima',
-    empresa: user?.empresa  || 'Studio Visual',
-    cat:     user?.cat      || 'Design',
-    bio:     'Criamos identidades visuais para pequenos negócios que querem ser levados a sério. Atendemos de forma 100% online.',
-    site:    'studiovisual.com.br',
-    phone:   '(11) 99999-0000',
-    cnpj:    '00.000.000/0001-00',
+    nome:    user?.name    || '',
+    empresa: user?.empresa || '',
+    cat:     user?.cat     || '',
+    bio:     user?.bio     || '',
+    site:    user?.site    || '',
+    phone:   user?.phone   || '',
+    cnpj:    user?.cnpj    || '',
   })
   const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState(null)
 
-  function set(k, v) { setForm(f => ({ ...f, [k]: v })); setSaved(false) }
-  function handleSave(e) { e.preventDefault(); setSaved(true); setTimeout(() => setSaved(false), 2500) }
+  function set(k, v) { setForm(f => ({ ...f, [k]: v })); setSaved(false); setSaveError(null) }
+
+  async function handleSave(e) {
+    e.preventDefault()
+    setSaving(true)
+    setSaveError(null)
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name:    form.nome,
+        empresa: form.empresa,
+        cat:     form.cat,
+        bio:     form.bio,
+        site:    form.site,
+        phone:   form.phone,
+        cnpj:    form.cnpj,
+      })
+      .eq('id', user.id)
+    setSaving(false)
+    if (error) { setSaveError('Erro ao salvar. Tente novamente.'); return }
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+    onProfileSaved?.({ ...user, name: form.nome, empresa: form.empresa, cat: form.cat, bio: form.bio, site: form.site, phone: form.phone, cnpj: form.cnpj })
+  }
 
   return (
     <div>
@@ -162,8 +186,9 @@ function PerfilView({ user }) {
             <input className="pv-input" value={form.cnpj} onChange={e => set('cnpj', e.target.value)} placeholder="00.000.000/0001-00" />
           </div>
 
-          <button type="submit" className="btn btn--primary" style={{ marginTop: 8 }}>
-            {saved ? '✓ Salvo' : 'Salvar alterações'}
+          {saveError && <p style={{ color: 'var(--danger, #f55)', fontSize: 13, margin: '4px 0 0' }}>{saveError}</p>}
+          <button type="submit" className="btn btn--primary" style={{ marginTop: 8 }} disabled={saving}>
+            {saving ? 'Salvando…' : saved ? '✓ Salvo' : 'Salvar alterações'}
           </button>
         </form>
 
@@ -460,7 +485,7 @@ export default function Provider() {
   }, [])
 
   function renderView() {
-    if (view === 'perfil')     return <PerfilView user={user} onOpenModal={setModalProvider} />
+    if (view === 'perfil')     return <PerfilView user={user} onProfileSaved={u => setUser(u)} />
     if (view === 'demo')       return <DemoView />
     if (view === 'leads')      return <LeadsView />
     if (view === 'avaliacoes') return <AvaliacoesView />
