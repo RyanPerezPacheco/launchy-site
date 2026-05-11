@@ -1,39 +1,11 @@
 import { useState, useEffect } from 'react'
+import { supabase, redirectByRole } from '../lib/supabase'
 import './auth.css'
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
 const CATS = [
-  'Contabilidade',
-  'Banco PJ',
-  'Design',
-  'Marketing',
-  'Influencers',
-  'Jurídico',
-  'Outro',
+  'Contabilidade', 'Banco PJ', 'Design',
+  'Marketing', 'Influencers', 'Jurídico', 'Outro',
 ]
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function saveUser(data) {
-  localStorage.setItem('launchy_user', JSON.stringify(data))
-}
-
-function loadUser() {
-  try {
-    return JSON.parse(localStorage.getItem('launchy_user'))
-  } catch {
-    return null
-  }
-}
-
-function redirect(role) {
-  if (role === 'provider') {
-    window.location.href = '/provider.html'
-  } else {
-    window.location.href = '/dashboard.html'
-  }
-}
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -93,17 +65,31 @@ function RegisterView({ onSwitchToLogin }) {
     return Object.keys(e).length === 0
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     if (!validate()) return
     setLoading(true)
-    // Simulate async save
-    setTimeout(() => {
-      saveUser({ name: form.name, email: form.email, role, empresa: form.empresa, cat: form.cat })
-      setLoading(false)
-      setSuccess(true)
-      setTimeout(() => redirect(role), 1800)
-    }, 900)
+    const { error } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          name:    form.name,
+          role:    role,
+          empresa: form.empresa || null,
+          cat:     form.cat     || null,
+          phone:   form.phone   || null,
+          cnpj:    form.cnpj    || null,
+        },
+      },
+    })
+    setLoading(false)
+    if (error) {
+      setErrors({ email: error.message })
+      return
+    }
+    setSuccess(true)
+    setTimeout(() => redirectByRole(role), 1800)
   }
 
   if (success) {
@@ -113,7 +99,7 @@ function RegisterView({ onSwitchToLogin }) {
         <h3>Conta criada!</h3>
         <p>
           {role === 'provider'
-            ? 'Seu perfil de prestador está pronto. Redirecionando para o painel…'
+            ? 'Seu perfil de prestador está pronto. Redirecionando…'
             : 'Tudo certo. Redirecionando para o seu painel…'}
         </p>
       </div>
@@ -122,7 +108,6 @@ function RegisterView({ onSwitchToLogin }) {
 
   return (
     <>
-      {/* Step indicator */}
       <div className="auth-steps">
         <div className={`auth-step-dot${step >= 1 ? ' active' : ''}`} />
         <div className={`auth-step-dot${step >= 2 ? ' active' : ''}`} />
@@ -132,44 +117,31 @@ function RegisterView({ onSwitchToLogin }) {
         <>
           <h2 className="auth-heading">Qual é o seu perfil?</h2>
           <p className="auth-sub">Escolha como você vai usar a Launchy.</p>
-
           <div className="auth-role-grid">
             <div
               className={`auth-role-card${role === 'client' ? ' selected' : ''}`}
               onClick={() => setRole('client')}
-              role="button"
-              tabIndex={0}
+              role="button" tabIndex={0}
               onKeyDown={ev => ev.key === 'Enter' && setRole('client')}
             >
               <span className="auth-role-icon">🏢</span>
               <p className="auth-role-title">Sou empreendedor</p>
-              <p className="auth-role-desc">
-                Abri ou vou abrir meu CNPJ e quero organizar meus fornecedores e obrigações.
-              </p>
+              <p className="auth-role-desc">Abri ou vou abrir meu CNPJ e quero organizar meus fornecedores e obrigações.</p>
               <div className="auth-role-check" />
             </div>
-
             <div
               className={`auth-role-card${role === 'provider' ? ' selected' : ''}`}
               onClick={() => setRole('provider')}
-              role="button"
-              tabIndex={0}
+              role="button" tabIndex={0}
               onKeyDown={ev => ev.key === 'Enter' && setRole('provider')}
             >
               <span className="auth-role-icon">🛠</span>
               <p className="auth-role-title">Sou prestador</p>
-              <p className="auth-role-desc">
-                Ofereço serviços para empresas (contabilidade, design, banco, jurídico etc.).
-              </p>
+              <p className="auth-role-desc">Ofereço serviços para empresas (contabilidade, design, banco, jurídico etc.).</p>
               <div className="auth-role-check" />
             </div>
           </div>
-
-          <button
-            className="auth-btn-primary"
-            disabled={!role}
-            onClick={() => setStep(2)}
-          >
+          <button className="auth-btn-primary" disabled={!role} onClick={() => setStep(2)}>
             Continuar →
           </button>
         </>
@@ -179,11 +151,8 @@ function RegisterView({ onSwitchToLogin }) {
             {role === 'provider' ? 'Dados da sua empresa' : 'Seus dados'}
           </h2>
           <p className="auth-sub">
-            {role === 'provider'
-              ? 'Crie seu perfil de prestador.'
-              : 'Crie sua conta de empreendedor.'}
+            {role === 'provider' ? 'Crie seu perfil de prestador.' : 'Crie sua conta de empreendedor.'}
           </p>
-
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
             {role === 'provider' ? (
               <>
@@ -239,19 +208,16 @@ function RegisterView({ onSwitchToLogin }) {
                 </div>
               </>
             )}
-
             <div className="auth-field">
               <label className="auth-label" htmlFor="r-pw">Senha</label>
               <PasswordInput id="r-pw" value={form.password} onChange={e => set('password', e.target.value)} />
               {errors.password && <span className="auth-error-msg">{errors.password}</span>}
             </div>
-
             <p style={{ fontSize: 11.5, color: 'var(--fg-3)', margin: '-4px 0 0', lineHeight: 1.6 }}>
               Ao criar conta você concorda com os{' '}
               <span className="auth-link">Termos de Uso</span> e{' '}
               <span className="auth-link">Política de Privacidade</span>.
             </p>
-
             <div className="auth-actions-row">
               <button type="button" className="auth-btn-back" onClick={() => setStep(1)}>← Voltar</button>
               <button type="submit" className="auth-btn-primary" disabled={loading}>
@@ -282,58 +248,49 @@ function LoginView({ onSwitchToRegister }) {
     setErrors(e => ({ ...e, [key]: '' }))
   }
 
-  function validate() {
-    const e = {}
-    if (!form.email.includes('@')) e.email = 'E-mail inválido.'
-    if (form.password.length < 4) e.password = 'Informe sua senha.'
-    setErrors(e)
-    return Object.keys(e).length === 0
-  }
-
-  function handleSubmit(ev) {
+  async function handleSubmit(ev) {
     ev.preventDefault()
-    if (!validate()) return
+    if (!form.email.includes('@')) { setErrors({ email: 'E-mail inválido.' }); return }
+    if (form.password.length < 4)  { setErrors({ password: 'Informe sua senha.' }); return }
     setLoading(true)
-    setTimeout(() => {
-      const user = loadUser()
-      if (user && user.email === form.email) {
-        setLoading(false)
-        redirect(user.role)
-      } else {
-        // Demo: default to client for any email
-        saveUser({ name: form.email.split('@')[0], email: form.email, role: 'client' })
-        setLoading(false)
-        redirect('client')
-      }
-    }, 800)
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: form.email,
+      password: form.password,
+    })
+    if (error) {
+      setLoading(false)
+      setErrors({ password: 'E-mail ou senha incorretos.' })
+      return
+    }
+    // Fetch role from profiles
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single()
+    setLoading(false)
+    redirectByRole(profile?.role || 'client')
   }
 
   return (
     <>
       <h2 className="auth-heading">Bem-vindo de volta</h2>
       <p className="auth-sub">Entre na sua conta Launchy.</p>
-
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <div className="auth-field">
           <label className="auth-label" htmlFor="l-email">E-mail</label>
           <input
-            id="l-email"
-            type="email"
+            id="l-email" type="email"
             className={`auth-input${errors.email ? ' error' : ''}`}
-            value={form.email}
-            onChange={e => set('email', e.target.value)}
-            placeholder="seu@email.com.br"
-            autoComplete="email"
+            value={form.email} onChange={e => set('email', e.target.value)}
+            placeholder="seu@email.com.br" autoComplete="email"
           />
           {errors.email && <span className="auth-error-msg">{errors.email}</span>}
         </div>
-
         <div className="auth-field">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <label className="auth-label" htmlFor="l-pw">Senha</label>
-            <button type="button" className="auth-link" style={{ fontSize: 12 }}>
-              Esqueci a senha
-            </button>
+            <button type="button" className="auth-link" style={{ fontSize: 12 }}>Esqueci a senha</button>
           </div>
           <PasswordInput
             id="l-pw"
@@ -343,31 +300,10 @@ function LoginView({ onSwitchToRegister }) {
           />
           {errors.password && <span className="auth-error-msg">{errors.password}</span>}
         </div>
-
         <button type="submit" className="auth-btn-primary" style={{ marginTop: 4 }} disabled={loading}>
           {loading ? 'Entrando…' : 'Entrar'}
         </button>
       </form>
-
-      <div className="auth-divider" style={{ margin: '16px 0' }}>ou</div>
-
-      <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button
-          className="auth-btn-back"
-          style={{ width: '100%' }}
-          onClick={() => { saveUser({ name: 'Ryan', email: 'cliente@demo.com', role: 'client' }); redirect('client') }}
-        >
-          🏢 Entrar como cliente (demo)
-        </button>
-        <button
-          className="auth-btn-back"
-          style={{ width: '100%' }}
-          onClick={() => { saveUser({ name: 'Ana Lima', email: 'prestador@demo.com', role: 'provider', empresa: 'Studio Visual', cat: 'Design' }); redirect('provider') }}
-        >
-          🛠 Entrar como prestador (demo)
-        </button>
-      </div>
-
       <p className="auth-footer" style={{ marginTop: 20 }}>
         Não tem conta?{' '}
         <button className="auth-link" onClick={onSwitchToRegister}>Cadastrar</button>
@@ -389,11 +325,13 @@ export default function Auth() {
 
   // Auto-redirect if already logged in
   useEffect(() => {
-    const user = loadUser()
-    if (user && user.role) redirect(user.role)
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return
+      const { data: profile } = await supabase
+        .from('profiles').select('role').eq('id', session.user.id).single()
+      if (profile?.role) redirectByRole(profile.role)
+    })
   }, [])
-
-  const isWide = mode === 'register'
 
   return (
     <div className="auth-bg">
@@ -404,27 +342,14 @@ export default function Auth() {
       >
         {dark ? '☀' : '☾'}
       </button>
-
-      <div className={`auth-card${isWide ? ' auth-card--wide' : ''}`}>
+      <div className={`auth-card${mode === 'register' ? ' auth-card--wide' : ''}`}>
         <div className="auth-logo">
           <span className="auth-logo-dot">◆</span> Launchy
         </div>
-
         <div className="auth-tabs">
-          <button
-            className={`auth-tab${mode === 'login' ? ' active' : ''}`}
-            onClick={() => setMode('login')}
-          >
-            Entrar
-          </button>
-          <button
-            className={`auth-tab${mode === 'register' ? ' active' : ''}`}
-            onClick={() => setMode('register')}
-          >
-            Criar conta
-          </button>
+          <button className={`auth-tab${mode === 'login' ? ' active' : ''}`} onClick={() => setMode('login')}>Entrar</button>
+          <button className={`auth-tab${mode === 'register' ? ' active' : ''}`} onClick={() => setMode('register')}>Criar conta</button>
         </div>
-
         {mode === 'login'
           ? <LoginView onSwitchToRegister={() => setMode('register')} />
           : <RegisterView onSwitchToLogin={() => setMode('login')} />

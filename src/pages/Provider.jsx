@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import './dashboard.css'
 import './provider.css'
+import { supabase, getProfile, signOut } from '../lib/supabase'
 
 // ── Mock data ─────────────────────────────────────────────────────────────────
 
@@ -370,8 +371,7 @@ function PlanosView() {
 
 function ProviderSidebar({ view, setView, user }) {
   function logout() {
-    localStorage.removeItem('launchy_user')
-    window.location.href = '/auth.html'
+    signOut()
   }
 
   return (
@@ -450,14 +450,13 @@ export default function Provider() {
   }, [dark])
 
   useEffect(() => {
-    try {
-      const u = JSON.parse(localStorage.getItem('launchy_user'))
-      if (!u) { window.location.href = '/auth.html'; return }
-      if (u.role !== 'provider') { window.location.href = '/dashboard.html'; return }
-      setUser(u)
-    } catch {
-      window.location.href = '/auth.html'
-    }
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) { window.location.href = '/auth.html'; return }
+      const profile = await getProfile(session.user.id)
+      if (!profile) { window.location.href = '/auth.html'; return }
+      if (profile.role !== 'provider') { window.location.href = '/dashboard.html'; return }
+      setUser({ ...profile, email: session.user.email })
+    })
   }, [])
 
   function renderView() {

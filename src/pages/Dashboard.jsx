@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import './dashboard.css'
+import { supabase, getProfile, signOut } from '../lib/supabase'
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 
@@ -434,8 +435,7 @@ function ProviderModal({ provider, onClose }) {
 
 function Sidebar({ view, setView, user }) {
   function logout() {
-    localStorage.removeItem('launchy_user')
-    window.location.href = '/auth.html'
+    signOut()
   }
 
   const displayName = user?.name || 'Ryan'
@@ -525,12 +525,13 @@ export default function Dashboard() {
 
   // Role guard: redirect providers to their own dashboard, unauthenticated to auth
   useEffect(() => {
-    try {
-      const u = JSON.parse(localStorage.getItem('launchy_user'))
-      if (!u) return // allow demo access without login
-      if (u.role === 'provider') { window.location.href = '/provider.html'; return }
-      setUser(u)
-    } catch { /* no-op */ }
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) { window.location.href = '/auth.html'; return }
+      const profile = await getProfile(session.user.id)
+      if (!profile) { window.location.href = '/auth.html'; return }
+      if (profile.role === 'provider') { window.location.href = '/provider.html'; return }
+      setUser({ ...profile, email: session.user.email })
+    })
   }, [])
 
   function renderView() {
