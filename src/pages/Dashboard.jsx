@@ -251,10 +251,10 @@ function ProviderCard({ provider, compact, onOpenModal }) {
   )
 }
 
-function StepCard({ step, defaultOpen, onOpenModal }) {
+function StepCard({ step, status, defaultOpen, onOpenModal, onToggle }) {
   const [open, setOpen] = useState(defaultOpen || false)
-  const isCurrent = step.status === 'current'
-  const isDone = step.status === 'done'
+  const isCurrent = status === 'current'
+  const isDone = status === 'done'
 
   let chkClass = 'db-step-chk'
   if (isDone) chkClass += ' db-step-chk--done'
@@ -270,7 +270,12 @@ function StepCard({ step, defaultOpen, onOpenModal }) {
     <div className={stepClass}>
       <div className="db-step-hd" onClick={() => setOpen(o => !o)}>
         <span className="db-step-num">{String(step.id).padStart(2, '0')}</span>
-        <span className={chkClass} />
+        <span
+          className={chkClass}
+          onClick={e => { e.stopPropagation(); onToggle && onToggle(step.id) }}
+          title={isDone ? 'Marcar como pendente' : 'Marcar como concluído'}
+          style={{ cursor: 'pointer' }}
+        />
         <div className="db-step-info">
           <div className="db-step-title">{step.title}</div>
           <div className="db-step-sub">{step.sub}</div>
@@ -286,15 +291,29 @@ function StepCard({ step, defaultOpen, onOpenModal }) {
         <div className="db-step-body">
           <p className="db-step-desc">{step.desc}</p>
           {step.provider && <ProviderCard provider={step.provider} compact onOpenModal={onOpenModal} />}
+          <button
+            className={`btn ${isDone ? 'btn--outline' : 'btn--primary'}`}
+            style={{ marginTop: 12 }}
+            onClick={() => onToggle && onToggle(step.id)}
+          >
+            {isDone ? '↩ Marcar como pendente' : '✓ Marcar como concluído'}
+          </button>
         </div>
       )}
     </div>
   )
 }
 
-function ChecklistView({ onOpenModal }) {
-  const done = STEPS.filter(s => s.status === 'done').length
-  const pct = Math.round((done / STEPS.length) * 100)
+function ChecklistView({ onOpenModal, doneIds, onToggle }) {
+  const doneCount = doneIds.length
+  const pct = Math.round((doneCount / STEPS.length) * 100)
+
+  function getStatus(id) {
+    if (doneIds.includes(id)) return 'done'
+    const firstPending = STEPS.find(s => !doneIds.includes(s.id))
+    if (firstPending?.id === id) return 'current'
+    return 'todo'
+  }
 
   return (
     <div>
@@ -308,7 +327,7 @@ function ChecklistView({ onOpenModal }) {
         </div>
         <div className="db-checklist-pct">
           <span className="db-pct-num">{pct}%</span>
-          <span className="db-pct-label">{done}/{STEPS.length} etapas</span>
+          <span className="db-pct-label">{doneCount}/{STEPS.length} etapas</span>
         </div>
       </div>
 
@@ -316,18 +335,23 @@ function ChecklistView({ onOpenModal }) {
         <div className="db-pbar">
           <div className="db-pfill" style={{ width: `${pct}%` }} />
         </div>
-        <span className="db-pbar-hint">{STEPS.length - done} restantes</span>
+        <span className="db-pbar-hint">{STEPS.length - doneCount} restantes</span>
       </div>
 
       <div className="db-steps-list">
-        {STEPS.map(step => (
-          <StepCard
-            key={step.id}
-            step={step}
-            defaultOpen={step.status === 'current'}
-            onOpenModal={onOpenModal}
-          />
-        ))}
+        {STEPS.map(step => {
+          const status = getStatus(step.id)
+          return (
+            <StepCard
+              key={step.id}
+              step={step}
+              status={status}
+              defaultOpen={status === 'current'}
+              onOpenModal={onOpenModal}
+              onToggle={onToggle}
+            />
+          )
+        })}
       </div>
     </div>
   )
@@ -516,6 +540,7 @@ export default function Dashboard() {
   const [dark, setDark] = useState(true)
   const [user, setUser] = useState(null)
   const [modalProvider, setModalProvider] = useState(null)
+  const [doneIds, setDoneIds] = useState([])
 
   useEffect(() => {
     const el = document.documentElement
@@ -531,11 +556,20 @@ export default function Dashboard() {
       if (!profile) { window.location.href = '/auth.html'; return }
       if (profile.role === 'provider') { window.location.href = '/provider.html'; return }
       setUser({ ...profile, email: session.user.email })
+      setDoneIds(profile.checklist_done || [])
     })
   }, [])
 
+  async function toggleStep(id) {
+    const newDone = doneIds.includes(id)
+      ? doneIds.filter(x => x !== id)
+      : [...doneIds, id]
+    setDoneIds(newDone)
+    await supabase.from('profiles').update({ checklist_done: newDone }).eq('id', user.id)
+  }
+
   function renderView() {
-    if (view === 'checklist')   return <ChecklistView onOpenModal={setModalProvider} />
+    if (view === 'checklist')   return <ChecklistView onOpenModal={setModalProvider} doneIds={doneIds} onToggle={toggleStep} />
     if (view === 'prestadores') return <PrestadoresView onOpenModal={setModalProvider} />
     if (MAIN_VIEWS.includes(view)) return <ComingSoon label={view.charAt(0).toUpperCase() + view.slice(1)} />
     // category views
