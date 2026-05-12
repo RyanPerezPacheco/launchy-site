@@ -35,12 +35,13 @@ export function FounderForm() {
     setErrors(e);
     if (Object.keys(e).length !== 0) return;
     setLoading(true);
-    await supabase.from('leads').insert({
+    const { error } = await supabase.from('leads').insert({
       nome:     data.nome,
       email:    data.email,
       whatsapp: data.whatsapp,
       estagio:  data.estagio,
     });
+    if (error) console.error('Erro ao salvar lead:', error);
     try {
       localStorage.setItem('launchy_prefill', JSON.stringify({ name: data.nome, email: data.email }));
     } catch { /* no-op */ }
