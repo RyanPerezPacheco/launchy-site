@@ -97,19 +97,38 @@ function ProviderModal({ provider, onClose }) {
 
 function PerfilView({ user, onProfileSaved }) {
   const [form, setForm] = useState({
-    nome:    user?.name    || '',
-    empresa: user?.empresa || '',
-    cat:     user?.cat     || '',
-    bio:     user?.bio     || '',
-    site:    user?.site    || '',
-    phone:   user?.phone   || '',
-    cnpj:    user?.cnpj    || '',
+    nome:    user?.name     || '',
+    empresa: user?.empresa  || '',
+    cat:     user?.cat      || '',
+    bio:     user?.bio      || '',
+    site:    user?.site     || '',
+    phone:   user?.phone    || '',
+    cnpj:    user?.cnpj     || '',
+    deal:    user?.deal     || '',
   })
+  const [logoUrl, setLogoUrl] = useState(user?.logo_url || null)
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const logoRef = useRef(null)
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); setSaved(false); setSaveError(null) }
+
+  async function handleLogoUpload(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploadingLogo(true)
+    const ext = file.name.split('.').pop().toLowerCase()
+    const path = `${user.id}/logo.${ext}`
+    const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
+    if (upErr) { setUploadingLogo(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+    const url = `${publicUrl}?t=${Date.now()}`
+    await supabase.from('profiles').update({ logo_url: url }).eq('id', user.id)
+    setLogoUrl(url)
+    setUploadingLogo(false)
+  }
 
   async function handleSave(e) {
     e.preventDefault()
@@ -125,13 +144,14 @@ function PerfilView({ user, onProfileSaved }) {
         site:    form.site,
         phone:   form.phone,
         cnpj:    form.cnpj,
+        deal:    form.deal || null,
       })
       .eq('id', user.id)
     setSaving(false)
     if (error) { setSaveError('Erro ao salvar. Tente novamente.'); return }
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)
-    onProfileSaved?.({ ...user, name: form.nome, empresa: form.empresa, cat: form.cat, bio: form.bio, site: form.site, phone: form.phone, cnpj: form.cnpj })
+    onProfileSaved?.({ ...user, name: form.nome, empresa: form.empresa, cat: form.cat, bio: form.bio, site: form.site, phone: form.phone, cnpj: form.cnpj, deal: form.deal, logo_url: logoUrl })
   }
 
   return (
@@ -143,7 +163,27 @@ function PerfilView({ user, onProfileSaved }) {
       <div className="pv-grid">
         {/* Form */}
         <form className="pv-form" onSubmit={handleSave}>
-          <div className="pv-section-label">Dados gerais</div>
+          <div className="pv-section-label">Logo da empresa</div>
+          <div className="pv-logo-row">
+            <div className="pv-logo-preview" onClick={() => logoRef.current?.click()} title="Clique para trocar">
+              {uploadingLogo ? (
+                <span style={{ fontSize: 11, color: 'var(--fg-3)' }}>Enviando…</span>
+              ) : logoUrl ? (
+                <img src={logoUrl} alt="Logo" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 10 }} />
+              ) : (
+                <span style={{ fontSize: 28 }}>{(form.empresa || '?').charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+            <div>
+              <button type="button" className="btn btn--outline btn--sm" onClick={() => logoRef.current?.click()} disabled={uploadingLogo}>
+                {uploadingLogo ? 'Enviando…' : logoUrl ? 'Trocar logo' : 'Adicionar logo'}
+              </button>
+              <p style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 6 }}>PNG ou JPG · Aparece no card do prestador</p>
+            </div>
+            <input ref={logoRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleLogoUpload} />
+          </div>
+
+          <div className="pv-section-label" style={{ marginTop: 8 }}>Dados gerais</div>
 
           <div className="pv-row">
             <div className="pv-field">
@@ -184,6 +224,12 @@ function PerfilView({ user, onProfileSaved }) {
           <div className="pv-field">
             <label className="pv-label">CNPJ</label>
             <input className="pv-input" value={form.cnpj} onChange={e => set('cnpj', e.target.value)} placeholder="00.000.000/0001-00" />
+          </div>
+
+          <div className="pv-field">
+            <label className="pv-label">Condição exclusiva para clientes Launchy</label>
+            <input className="pv-input" value={form.deal} onChange={e => set('deal', e.target.value)} placeholder="Ex: 1º mês grátis, 20% off, Consulta grátis…" />
+            <span style={{ fontSize: 11, color: 'var(--fg-3)', marginTop: 4, display: 'block' }}>Aparece no card com ícone 🎁</span>
           </div>
 
           {saveError && <p style={{ color: 'var(--danger, #f55)', fontSize: 13, margin: '4px 0 0' }}>{saveError}</p>}

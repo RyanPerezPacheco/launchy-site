@@ -368,3 +368,26 @@
 .plan-hist-status--pago { background: var(--accent-soft); color: var(--accent-deep); }
 [data-theme="dark"] .plan-hist-status--pago { color: var(--accent); }
 .plan-hist-status--pendente { background: #fff3e0; color: #c57800; }
+
+/* Logo upload */
+.pv-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.pv-logo-preview {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  border: 1.5px dashed var(--line);
+  background: var(--bg-alt);
+  display: grid;
+  place-items: center;
+  font-size: 26px;
+  cursor: pointer;
+  overflow: hidden;
+  flex-shrink: 0;
+  transition: border-color .15s;
+}
+.pv-logo-preview:hover { border-color: var(--accent); }

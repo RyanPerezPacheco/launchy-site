@@ -209,12 +209,19 @@ const MAIN_VIEWS = ['checklist', 'prestadores', 'documentos']
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
+function ProviderLogo({ provider, className }) {
+  if (provider.logo_url) {
+    return <img src={provider.logo_url} alt={provider.name} className={className} style={{ objectFit: 'cover', borderRadius: 10 }} />
+  }
+  return <div className={className}>{provider.emoji || (provider.name || '?').charAt(0).toUpperCase()}</div>
+}
+
 function ProviderCard({ provider, compact, onOpenModal }) {
   if (!provider) return null
   if (compact) {
     return (
       <div className={`db-prov-card${provider ? ' db-prov-card--active' : ''}`}>
-        <div className="db-prov-ph">{provider.emoji}</div>
+        <ProviderLogo provider={provider} className="db-prov-ph" />
         <div className="db-prov-info">
           <div className="db-prov-name">{provider.name}</div>
           <div className="db-prov-meta">
@@ -233,7 +240,7 @@ function ProviderCard({ provider, compact, onOpenModal }) {
   return (
     <div className="db-prest-card">
       <div className="db-pc-top">
-        <div className="db-pc-ph">{provider.emoji}</div>
+        <ProviderLogo provider={provider} className="db-pc-ph" />
         {provider.verified && <span className="db-verified-badge">verificado</span>}
       </div>
       <div className="db-pc-name">{provider.name}</div>
@@ -453,7 +460,7 @@ function ProviderModal({ provider, onClose }) {
         <button className="pm-close" onClick={onClose} aria-label="Fechar">✕</button>
 
         <div className="pm-header">
-          <div className="pm-logo">{provider.emoji || initial}</div>
+          <ProviderLogo provider={{ ...provider, name: provider.empresa || provider.name }} className="pm-logo" />
           <div>
             <div className="pm-name">{displayName}</div>
             <div className="pm-cat">{provider.cat}</div>
