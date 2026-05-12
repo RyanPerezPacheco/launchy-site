@@ -363,17 +363,24 @@ function PrestadoresView({ onOpenModal }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('profiles').select('*').eq('role', 'provider').eq('verified', true).order('empresa').then(({ data }) => {
-      setProviders(data || [])
+    Promise.all([
+      supabase.from('profiles').select('*').eq('role', 'provider').eq('verified', true).order('empresa'),
+      supabase.from('providers').select('*').eq('verified', true).order('name'),
+    ]).then(([{ data: profiles }, { data: curated }]) => {
+      const fromProfiles = (profiles || []).map(p => ({
+        ...p, name: p.empresa || p.name, emoji: (p.empresa || p.name || '?').charAt(0).toUpperCase(), desc: p.bio, reviews: p.reviews_count, _source: 'profile',
+      }))
+      const fromCurated = (curated || []).map(p => ({
+        ...p, desc: p.description, reviews: p.reviews, _source: 'curated',
+      }))
+      setProviders([...fromProfiles, ...fromCurated])
       setLoading(false)
     })
   }, [])
 
   const filtered = cat === 'Todos' ? providers : providers.filter(p => p.cat === cat)
 
-  function toCard(p) {
-    return { ...p, name: p.empresa || p.name, emoji: (p.empresa || p.name || '?').charAt(0).toUpperCase(), desc: p.bio, reviews: p.reviews_count }
-  }
+  function toCard(p) { return p }
 
   return (
     <div>
@@ -676,17 +683,24 @@ function PrestadoresWithCat({ initialCat, onOpenModal }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('profiles').select('*').eq('role', 'provider').eq('verified', true).order('empresa').then(({ data }) => {
-      setProviders(data || [])
+    Promise.all([
+      supabase.from('profiles').select('*').eq('role', 'provider').eq('verified', true).order('empresa'),
+      supabase.from('providers').select('*').eq('verified', true).order('name'),
+    ]).then(([{ data: profiles }, { data: curated }]) => {
+      const fromProfiles = (profiles || []).map(p => ({
+        ...p, name: p.empresa || p.name, emoji: (p.empresa || p.name || '?').charAt(0).toUpperCase(), desc: p.bio, reviews: p.reviews_count, _source: 'profile',
+      }))
+      const fromCurated = (curated || []).map(p => ({
+        ...p, desc: p.description, reviews: p.reviews, _source: 'curated',
+      }))
+      setProviders([...fromProfiles, ...fromCurated])
       setLoading(false)
     })
   }, [])
 
   const filtered = cat === 'Todos' ? providers : providers.filter(p => p.cat === cat)
 
-  function toCard(p) {
-    return { ...p, name: p.empresa || p.name, emoji: (p.empresa || p.name || '?').charAt(0).toUpperCase(), desc: p.bio, reviews: p.reviews_count }
-  }
+  function toCard(p) { return p }
 
   return (
     <div>
