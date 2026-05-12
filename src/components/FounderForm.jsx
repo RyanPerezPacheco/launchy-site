@@ -1,6 +1,7 @@
 // components/FounderForm.jsx
 // Founder signup form with validation + LGPD consent.
 import { useState } from 'react'
+import { supabase } from '../lib/supabase'
 
 export function FounderForm() {
   const [data, setData] = useState({
@@ -8,6 +9,7 @@ export function FounderForm() {
   });
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const set = (k) => (e) => {
     const v = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -27,17 +29,23 @@ export function FounderForm() {
     return e;
   };
 
-  const onSubmit = (ev) => {
+  const onSubmit = async (ev) => {
     ev.preventDefault();
     const e = validate();
     setErrors(e);
-    if (Object.keys(e).length === 0) {
-      // Pre-populate auth with the founder's info
-      try {
-        localStorage.setItem('launchy_prefill', JSON.stringify({ name: data.nome, email: data.email }));
-      } catch { /* no-op */ }
-      setSubmitted(true);
-    }
+    if (Object.keys(e).length !== 0) return;
+    setLoading(true);
+    await supabase.from('leads').insert({
+      nome:     data.nome,
+      email:    data.email,
+      whatsapp: data.whatsapp,
+      estagio:  data.estagio,
+    });
+    try {
+      localStorage.setItem('launchy_prefill', JSON.stringify({ name: data.nome, email: data.email }));
+    } catch { /* no-op */ }
+    setLoading(false);
+    setSubmitted(true);
   };
 
   // Simple BR phone mask
@@ -121,8 +129,8 @@ export function FounderForm() {
               </label>
               {errors.consent && <div className="err" style={{ marginTop: -6 }}>{errors.consent}</div>}
 
-              <button type="submit" className="btn btn-primary btn-lg" style={{ marginTop: 8, justifyContent: "center" }}>
-                Garantir meu acesso de fundador <span className="arr">→</span>
+              <button type="submit" className="btn btn-primary btn-lg" style={{ marginTop: 8, justifyContent: "center" }} disabled={loading}>
+                {loading ? 'Salvando…' : <> Garantir meu acesso de fundador <span className="arr">→</span> </>}
               </button>
               <small className="mono muted" style={{ fontSize: 11, textAlign: "center" }}>
                 Vagas limitadas · Sem spam · Cancele quando quiser
