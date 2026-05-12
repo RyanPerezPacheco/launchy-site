@@ -5,118 +5,13 @@ import { supabase, getProfile, signOut } from '../lib/supabase'
 // ── Data ──────────────────────────────────────────────────────────────────────
 
 const STEPS = [
-  {
-    id: 1,
-    status: 'done',
-    title: 'Escolher o tipo de empresa',
-    sub: 'Estrutura jurídica',
-    desc: 'Você definiu o enquadramento ideal: MEI, ME ou EPP. Isso determina limite de faturamento, impostos e obrigações.',
-    provider: {
-      name: 'Contabilizei',
-      cat: 'Contabilidade',
-      emoji: '📊',
-      rating: '4.9',
-      reviews: '2.341 avaliações',
-      deal: '1º mês grátis para Launchy',
-      verified: true,
-    },
-  },
-  {
-    id: 2,
-    status: 'done',
-    title: 'Abrir o CNPJ',
-    sub: 'Registro da empresa',
-    desc: 'CNPJ ativo na Receita Federal. Sua empresa existe oficialmente.',
-    provider: {
-      name: 'Contabilizei',
-      cat: 'Contabilidade',
-      emoji: '📊',
-      rating: '4.9',
-      reviews: '2.341 avaliações',
-      deal: '1º mês grátis para Launchy',
-      verified: true,
-    },
-  },
-  {
-    id: 3,
-    status: 'done',
-    title: 'Abrir conta PJ',
-    sub: 'Banco empresarial',
-    desc: 'Conta corrente PJ aberta e pronta para receber pagamentos. Separar finanças pessoais das empresariais é obrigatório.',
-    provider: {
-      name: 'Conta Simples',
-      cat: 'Banco PJ',
-      emoji: '🏦',
-      rating: '4.8',
-      reviews: '1.890 avaliações',
-      deal: 'Sem mensalidade por 6 meses',
-      verified: true,
-    },
-  },
-  {
-    id: 4,
-    status: 'current',
-    title: 'Criar identidade visual',
-    sub: 'Marca e design',
-    desc: 'Logo, paleta de cores, tipografia e arquivos prontos para usar em redes sociais, apresentações e materiais impressos. Uma marca consistente gera confiança antes mesmo da primeira venda.',
-    provider: {
-      name: 'Studio Visual',
-      cat: 'Design',
-      emoji: '🎨',
-      rating: '4.7',
-      reviews: '892 avaliações',
-      deal: 'Kit marca completo com 20% off',
-      verified: true,
-    },
-  },
-  {
-    id: 5,
-    status: 'todo',
-    title: 'Divulgar o negócio',
-    sub: 'Marketing e redes',
-    desc: 'Presença digital mínima viável: perfil no Instagram, Google Meu Negócio ativo e primeiras postagens. Você não precisa de agência grande — precisa de consistência.',
-    provider: {
-      name: 'GrowthBR',
-      cat: 'Marketing',
-      emoji: '📣',
-      rating: '4.6',
-      reviews: '634 avaliações',
-      deal: 'Diagnóstico gratuito',
-      verified: false,
-    },
-  },
-  {
-    id: 6,
-    status: 'todo',
-    title: 'Contratar um influenciador',
-    sub: 'Divulgação paga',
-    desc: 'Micro-influenciadores do seu nicho e região convertem muito mais que campanhas genéricas. O Launchy conecta você com criadores já verificados.',
-    provider: {
-      name: 'CreatorMatch',
-      cat: 'Influencers',
-      emoji: '🎙️',
-      rating: '4.5',
-      reviews: '312 avaliações',
-      deal: '3 posts de teste sem compromisso',
-      verified: false,
-    },
-  },
-  {
-    id: 7,
-    status: 'todo',
-    title: 'Proteger a marca',
-    sub: 'Registro no INPI',
-    desc: 'Registrar a marca no INPI garante exclusividade de uso no Brasil. Sem isso, alguém pode usar o seu nome legitimamente — mesmo que você tenha criado primeiro.',
-    provider: {
-      name: 'LexBrasil',
-      cat: 'Jurídico',
-      emoji: '⚖️',
-      rating: '4.8',
-      reviews: '1.102 avaliações',
-      deal: 'Consulta inicial gratuita',
-      verified: true,
-    },
-  },
+  { id: 1, cat: 'Contabilidade', title: 'Escolher o tipo de empresa',  sub: 'Estrutura jurídica',   desc: 'Você definiu o enquadramento ideal: MEI, ME ou EPP. Isso determina limite de faturamento, impostos e obrigações.' },
+  { id: 2, cat: 'Contabilidade', title: 'Abrir o CNPJ',                sub: 'Registro da empresa',  desc: 'CNPJ ativo na Receita Federal. Sua empresa existe oficialmente.' },
+  { id: 3, cat: 'Banco PJ',      title: 'Abrir conta PJ',              sub: 'Banco empresarial',    desc: 'Conta corrente PJ aberta e pronta para receber pagamentos. Separar finanças pessoais das empresariais é obrigatório.' },
+  { id: 4, cat: 'Design',        title: 'Criar identidade visual',     sub: 'Marca e design',       desc: 'Logo, paleta de cores, tipografia e arquivos prontos para usar em redes sociais, apresentações e materiais impressos. Uma marca consistente gera confiança antes mesmo da primeira venda.' },
+  { id: 5, cat: 'Marketing',     title: 'Divulgar o negócio',          sub: 'Marketing e redes',    desc: 'Presença digital mínima viável: perfil no Instagram, Google Meu Negócio ativo e primeiras postagens. Você não precisa de agência grande — precisa de consistência.' },
+  { id: 6, cat: 'Influencers',   title: 'Contratar um influenciador',  sub: 'Divulgação paga',      desc: 'Micro-influenciadores do seu nicho e região convertem muito mais que campanhas genéricas. O Launchy conecta você com criadores já verificados.' },
+  { id: 7, cat: 'Jurídico',      title: 'Proteger a marca',            sub: 'Registro no INPI',     desc: 'Registrar a marca no INPI garante exclusividade de uso no Brasil. Sem isso, alguém pode usar o seu nome legitimamente — mesmo que você tenha criado primeiro.' },
 ]
 
 const ALL_PROVIDERS = [
@@ -314,6 +209,26 @@ function StepCard({ step, status, defaultOpen, onOpenModal, onToggle }) {
 function ChecklistView({ onOpenModal, doneIds, onToggle }) {
   const doneCount = doneIds.length
   const pct = Math.round((doneCount / STEPS.length) * 100)
+  const [allProviders, setAllProviders] = useState([])
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('profiles').select('*').eq('role', 'provider').eq('verified', true),
+      supabase.from('providers').select('*').eq('verified', true),
+    ]).then(([{ data: profiles }, { data: curated }]) => {
+      const fromProfiles = (profiles || []).map(p => ({
+        ...p, name: p.empresa || p.name, emoji: (p.empresa || p.name || '?').charAt(0), desc: p.bio, reviews: p.reviews_count,
+      }))
+      const fromCurated = (curated || []).map(p => ({ ...p, desc: p.description }))
+      setAllProviders([...fromProfiles, ...fromCurated])
+    })
+  }, [])
+
+  function getBestForCat(cat) {
+    const inCat = allProviders.filter(p => p.cat === cat)
+    if (!inCat.length) return null
+    return inCat.sort((a, b) => (parseFloat(b.rating) || 0) - (parseFloat(a.rating) || 0))[0]
+  }
 
   function getStatus(id) {
     if (doneIds.includes(id)) return 'done'
@@ -348,10 +263,11 @@ function ChecklistView({ onOpenModal, doneIds, onToggle }) {
       <div className="db-steps-list">
         {STEPS.map(step => {
           const status = getStatus(step.id)
+          const suggestedProvider = getBestForCat(step.cat)
           return (
             <StepCard
               key={step.id}
-              step={step}
+              step={{ ...step, provider: suggestedProvider }}
               status={status}
               defaultOpen={status === 'current'}
               onOpenModal={onOpenModal}
