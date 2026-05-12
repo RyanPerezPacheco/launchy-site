@@ -526,10 +526,25 @@ function ProviderModal({ provider, onClose }) {
         </div>
 
         <div className="pm-actions">
-          {siteUrl
-            ? <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }}>Acessar prestador</a>
-            : <button className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }}>Acessar prestador</button>
-          }
+          {siteUrl ? (
+            <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }}>
+              🌐 Acessar site →
+            </a>
+          ) : provider.phone ? (
+            <a
+              href={`https://wa.me/55${provider.phone.replace(/\D/g, '')}`}
+              target="_blank" rel="noopener noreferrer"
+              className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }}
+            >
+              💬 Falar no WhatsApp
+            </a>
+          ) : (
+            <div style={{ flex: 1, background: 'var(--bg-alt)', border: '1px solid var(--line)', borderRadius: 10, padding: '12px 16px', fontSize: 13 }}>
+              <p style={{ color: 'var(--fg-3)', fontFamily: 'var(--font-mono)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>Contato</p>
+              {provider.cnpj && <p style={{ color: 'var(--fg)', marginBottom: 4 }}>CNPJ: {provider.cnpj}</p>}
+              <p style={{ color: 'var(--fg-3)', fontSize: 12 }}>Prestador ainda não adicionou site ou WhatsApp.</p>
+            </div>
+          )}
           <button className="btn btn--outline" onClick={onClose}>Fechar</button>
         </div>
       </div>
