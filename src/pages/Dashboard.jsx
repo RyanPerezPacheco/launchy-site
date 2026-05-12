@@ -363,13 +363,17 @@ function PrestadoresView({ onOpenModal }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('providers').select('*').order('name').then(({ data }) => {
+    supabase.from('profiles').select('*').eq('role', 'provider').eq('verified', true).order('empresa').then(({ data }) => {
       setProviders(data || [])
       setLoading(false)
     })
   }, [])
 
   const filtered = cat === 'Todos' ? providers : providers.filter(p => p.cat === cat)
+
+  function toCard(p) {
+    return { ...p, name: p.empresa || p.name, emoji: (p.empresa || p.name || '?').charAt(0).toUpperCase(), desc: p.bio, reviews: p.reviews_count }
+  }
 
   return (
     <div>
@@ -391,10 +395,12 @@ function PrestadoresView({ onOpenModal }) {
 
       {loading ? (
         <p style={{ color: 'var(--fg-3)', fontSize: 14, marginTop: 24 }}>Carregando prestadores…</p>
+      ) : filtered.length === 0 ? (
+        <p style={{ color: 'var(--fg-3)', fontSize: 14, marginTop: 24 }}>Nenhum prestador disponível nesta categoria ainda.</p>
       ) : (
         <div className="db-prest-grid">
           {filtered.map(p => (
-            <ProviderCard key={p.id} provider={{ ...p, desc: p.description }} compact={false} onOpenModal={onOpenModal} />
+            <ProviderCard key={p.id} provider={toCard(p)} compact={false} onOpenModal={onOpenModal} />
           ))}
         </div>
       )}
@@ -417,50 +423,100 @@ function ComingSoon({ label }) {
 
 function ProviderModal({ provider, onClose }) {
   if (!provider) return null
+  const [demos, setDemos] = useState([])
+  const [loadingDemos, setLoadingDemos] = useState(true)
 
-  // Close on backdrop click or Escape key
+  useEffect(() => {
+    if (!provider.id) { setLoadingDemos(false); return }
+    supabase.from('demonstrations')
+      .select('*')
+      .eq('provider_id', provider.id)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => { setDemos(data || []); setLoadingDemos(false) })
+  }, [provider.id])
+
   const handleBackdrop = (e) => { if (e.target === e.currentTarget) onClose() }
+  const displayName = provider.empresa || provider.name
+  const initial = (displayName || '?').charAt(0).toUpperCase()
+  const siteUrl = provider.site ? (provider.site.startsWith('http') ? provider.site : `https://${provider.site}`) : null
 
   return (
     <div className="pm-backdrop" onClick={handleBackdrop} role="dialog" aria-modal="true">
-      <div className="pm-card">
+      <div className="pm-card pm-card--expanded">
         <button className="pm-close" onClick={onClose} aria-label="Fechar">✕</button>
 
         <div className="pm-header">
-          <div className="pm-logo">{provider.emoji}</div>
+          <div className="pm-logo">{provider.emoji || initial}</div>
           <div>
-            <div className="pm-name">{provider.name}</div>
+            <div className="pm-name">{displayName}</div>
             <div className="pm-cat">{provider.cat}</div>
           </div>
           {provider.verified && <span className="db-verified-badge" style={{ marginLeft: 'auto' }}>verificado</span>}
         </div>
 
-        <p className="pm-desc">{provider.desc || provider.reviews}</p>
+        {(provider.bio || provider.desc) && (
+          <p className="pm-desc">{provider.bio || provider.desc}</p>
+        )}
 
         <div className="pm-meta">
-          <div className="pm-meta-item">
-            <span className="pm-meta-label">Avaliação</span>
-            <span className="pm-meta-val" style={{ color: 'var(--accent-deep)' }}>★ {provider.rating}</span>
-          </div>
-          <div className="pm-meta-item">
-            <span className="pm-meta-label">Avaliações</span>
-            <span className="pm-meta-val">{provider.reviews}</span>
-          </div>
+          {provider.rating > 0 && (
+            <div className="pm-meta-item">
+              <span className="pm-meta-label">Avaliação</span>
+              <span className="pm-meta-val" style={{ color: 'var(--accent-deep)' }}>★ {provider.rating}</span>
+            </div>
+          )}
+          {(provider.reviews_count > 0 || provider.reviews) && (
+            <div className="pm-meta-item">
+              <span className="pm-meta-label">Avaliações</span>
+              <span className="pm-meta-val">{provider.reviews_count || provider.reviews}</span>
+            </div>
+          )}
           {provider.deal && (
             <div className="pm-meta-item">
               <span className="pm-meta-label">Condição exclusiva</span>
               <span className="pm-meta-val" style={{ color: 'var(--accent-deep)' }}>🎁 {provider.deal}</span>
             </div>
           )}
+          {provider.site && (
+            <div className="pm-meta-item">
+              <span className="pm-meta-label">Site</span>
+              <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="pm-meta-val" style={{ color: 'var(--accent-deep)' }}>{provider.site}</a>
+            </div>
+          )}
+          {provider.phone && (
+            <div className="pm-meta-item">
+              <span className="pm-meta-label">Contato</span>
+              <span className="pm-meta-val">{provider.phone}</span>
+            </div>
+          )}
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--fg-3)', marginBottom: 10 }}>
+            Demonstrações
+          </div>
+          {loadingDemos ? (
+            <p style={{ color: 'var(--fg-3)', fontSize: 13 }}>Carregando…</p>
+          ) : demos.length === 0 ? (
+            <p style={{ color: 'var(--fg-3)', fontSize: 13 }}>Nenhuma demonstração adicionada ainda.</p>
+          ) : (
+            <div className="pm-demos">
+              {demos.map(d => (
+                <a key={d.id} href={d.url} target="_blank" rel="noopener noreferrer" className="pm-demo-item">
+                  <span>{d.type === 'image' ? '🖼' : d.type === 'video' ? '▶' : d.type === 'pdf' ? '📄' : '🔗'}</span>
+                  <span>{d.title || d.url}</span>
+                </a>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="pm-actions">
-          <button className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }}>
-            Acessar prestador
-          </button>
-          <button className="btn btn--outline" onClick={onClose}>
-            Fechar
-          </button>
+          {siteUrl
+            ? <a href={siteUrl} target="_blank" rel="noopener noreferrer" className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }}>Acessar prestador</a>
+            : <button className="btn btn--primary" style={{ flex: 1, justifyContent: 'center' }}>Acessar prestador</button>
+          }
+          <button className="btn btn--outline" onClick={onClose}>Fechar</button>
         </div>
       </div>
     </div>
@@ -620,13 +676,17 @@ function PrestadoresWithCat({ initialCat, onOpenModal }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    supabase.from('providers').select('*').order('name').then(({ data }) => {
+    supabase.from('profiles').select('*').eq('role', 'provider').eq('verified', true).order('empresa').then(({ data }) => {
       setProviders(data || [])
       setLoading(false)
     })
   }, [])
 
   const filtered = cat === 'Todos' ? providers : providers.filter(p => p.cat === cat)
+
+  function toCard(p) {
+    return { ...p, name: p.empresa || p.name, emoji: (p.empresa || p.name || '?').charAt(0).toUpperCase(), desc: p.bio, reviews: p.reviews_count }
+  }
 
   return (
     <div>
@@ -648,10 +708,12 @@ function PrestadoresWithCat({ initialCat, onOpenModal }) {
 
       {loading ? (
         <p style={{ color: 'var(--fg-3)', fontSize: 14, marginTop: 24 }}>Carregando prestadores…</p>
+      ) : filtered.length === 0 ? (
+        <p style={{ color: 'var(--fg-3)', fontSize: 14, marginTop: 24 }}>Nenhum prestador disponível nesta categoria ainda.</p>
       ) : (
         <div className="db-prest-grid">
           {filtered.map(p => (
-            <ProviderCard key={p.id} provider={{ ...p, desc: p.description }} compact={false} onOpenModal={onOpenModal} />
+            <ProviderCard key={p.id} provider={toCard(p)} compact={false} onOpenModal={onOpenModal} />
           ))}
         </div>
       )}

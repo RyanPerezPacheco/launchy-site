@@ -781,3 +781,65 @@
 .pm-meta-val { font-size: 13.5px; font-weight: 500; color: var(--fg); }
 
 .pm-actions { display: flex; gap: 10px; }
+
+/* Modal expandido */
+.pm-card--expanded { max-width: 560px; max-height: 88vh; overflow-y: auto; }
+
+/* Demonstrações no modal */
+.pm-demos { display: flex; flex-direction: column; gap: 8px; }
+.pm-demo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--fg);
+  text-decoration: none;
+  transition: border-color .15s;
+}
+.pm-demo-item:hover { border-color: var(--accent); }
+
+/* Lista de demos no painel do prestador */
+.demo-list { display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
+.demo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.demo-item-ic { font-size: 18px; flex-shrink: 0; }
+.demo-item-info { flex: 1; min-width: 0; }
+.demo-item-title {
+  display: block;
+  font-size: 13px;
+  color: var(--fg);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.demo-item-title:hover { color: var(--accent-deep); }
+.demo-item-type {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--fg-3);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+.btn--ghost {
+  background: transparent;
+  border: none;
+  color: var(--fg-3);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  transition: color .12s, background .12s;
+}
+.btn--ghost:hover { color: var(--fg); background: var(--bg); }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './dashboard.css'
 import './provider.css'
 import { supabase, getProfile, signOut } from '../lib/supabase'
@@ -220,33 +220,107 @@ function PerfilView({ user, onProfileSaved }) {
   )
 }
 
-function DemoView() {
+function DemoView({ user }) {
+  const [demos, setDemos] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [linkUrl, setLinkUrl] = useState('')
+  const [linkTitle, setLinkTitle] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef(null)
+
+  useEffect(() => {
+    if (!user?.id) return
+    supabase.from('demonstrations').select('*').eq('provider_id', user.id).order('created_at', { ascending: false })
+      .then(({ data }) => { setDemos(data || []); setLoading(false) })
+  }, [user?.id])
+
+  async function addLink(e) {
+    e.preventDefault()
+    if (!linkUrl.trim()) return
+    setAdding(true)
+    const isVideo = linkUrl.includes('youtube') || linkUrl.includes('vimeo')
+    const { data, error } = await supabase.from('demonstrations').insert({
+      provider_id: user.id,
+      type: isVideo ? 'video' : 'link',
+      url: linkUrl.trim(),
+      title: linkTitle.trim() || null,
+    }).select().single()
+    setAdding(false)
+    if (!error && data) { setDemos(d => [data, ...d]); setLinkUrl(''); setLinkTitle('') }
+  }
+
+  async function uploadFile(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setUploading(true)
+    const ext = file.name.split('.').pop().toLowerCase()
+    const type = ['jpg','jpeg','png','gif','webp'].includes(ext) ? 'image' : 'pdf'
+    const path = `${user.id}/${Date.now()}-${file.name}`
+    const { error: upErr } = await supabase.storage.from('demonstrations').upload(path, file)
+    if (upErr) { setUploading(false); return }
+    const { data: { publicUrl } } = supabase.storage.from('demonstrations').getPublicUrl(path)
+    const { data, error } = await supabase.from('demonstrations').insert({
+      provider_id: user.id, type, url: publicUrl, title: file.name,
+    }).select().single()
+    setUploading(false)
+    if (!error && data) setDemos(d => [data, ...d])
+  }
+
+  async function removeDemo(id) {
+    await supabase.from('demonstrations').delete().eq('id', id)
+    setDemos(d => d.filter(x => x.id !== id))
+  }
+
   return (
     <div>
       <p className="pv-eyebrow">Minha conta</p>
       <h2 className="db-checklist-h2">Demonstração de serviço</h2>
       <p className="db-checklist-sub">Mostre seu trabalho para atrair mais clientes.</p>
 
-      <div className="demo-upload-area">
-        <div className="demo-upload-icon">📁</div>
-        <p className="demo-upload-title">Arraste arquivos aqui ou clique para selecionar</p>
-        <p className="demo-upload-sub">Imagens, PDFs ou link de vídeo (YouTube / Vimeo)</p>
-        <button className="btn btn--outline" style={{ marginTop: 8 }}>Selecionar arquivos</button>
+      {/* Upload de arquivo */}
+      <div className="demo-upload-area" onClick={() => fileRef.current?.click()} style={{ cursor: 'pointer' }}>
+        <div className="demo-upload-icon">{uploading ? '⏳' : '📁'}</div>
+        <p className="demo-upload-title">{uploading ? 'Enviando…' : 'Clique para selecionar arquivo'}</p>
+        <p className="demo-upload-sub">Imagens (JPG, PNG) ou PDF — máx. 10MB</p>
+        <input ref={fileRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }} onChange={uploadFile} />
       </div>
 
+      {/* Adicionar link */}
       <div className="demo-link-wrap">
-        <p className="pv-label" style={{ marginBottom: 8 }}>Ou adicione um link de vídeo</p>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <input className="pv-input" style={{ flex: 1 }} placeholder="https://youtube.com/…" />
-          <button className="btn btn--primary">Adicionar</button>
-        </div>
+        <p className="pv-label" style={{ marginBottom: 8 }}>Ou adicione um link (YouTube, Vimeo, portfólio…)</p>
+        <form onSubmit={addLink} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <input className="pv-input" value={linkTitle} onChange={e => setLinkTitle(e.target.value)} placeholder="Título (opcional)" />
+          <div style={{ display: 'flex', gap: 10 }}>
+            <input className="pv-input" style={{ flex: 1 }} value={linkUrl} onChange={e => setLinkUrl(e.target.value)} placeholder="https://…" />
+            <button type="submit" className="btn btn--primary" disabled={adding}>{adding ? '…' : 'Adicionar'}</button>
+          </div>
+        </form>
       </div>
 
-      <div className="db-coming-soon" style={{ minHeight: '25vh' }}>
-        <div className="db-cs-icon">🎬</div>
-        <h3>Nenhuma demonstração ainda</h3>
-        <p>Adicione fotos, vídeos ou PDFs do seu trabalho para aumentar a confiança dos clientes.</p>
-      </div>
+      {/* Lista de demos */}
+      {loading ? (
+        <p style={{ color: 'var(--fg-3)', fontSize: 14, marginTop: 24 }}>Carregando…</p>
+      ) : demos.length === 0 ? (
+        <div className="db-coming-soon" style={{ minHeight: '20vh' }}>
+          <div className="db-cs-icon">🎬</div>
+          <h3>Nenhuma demonstração ainda</h3>
+          <p>Adicione fotos, vídeos ou links do seu trabalho.</p>
+        </div>
+      ) : (
+        <div className="demo-list">
+          {demos.map(d => (
+            <div key={d.id} className="demo-item">
+              <span className="demo-item-ic">{d.type === 'image' ? '🖼' : d.type === 'video' ? '▶' : d.type === 'pdf' ? '📄' : '🔗'}</span>
+              <div className="demo-item-info">
+                <a href={d.url} target="_blank" rel="noopener noreferrer" className="demo-item-title">{d.title || d.url}</a>
+                <span className="demo-item-type">{d.type}</span>
+              </div>
+              <button className="btn btn--sm btn--ghost" onClick={() => removeDemo(d.id)} title="Remover">✕</button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -486,7 +560,7 @@ export default function Provider() {
 
   function renderView() {
     if (view === 'perfil')     return <PerfilView user={user} onProfileSaved={u => setUser(u)} />
-    if (view === 'demo')       return <DemoView />
+    if (view === 'demo')       return <DemoView user={user} />
     if (view === 'leads')      return <LeadsView />
     if (view === 'avaliacoes') return <AvaliacoesView />
     if (view === 'planos')     return <PlanosView />
