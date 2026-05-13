@@ -229,6 +229,11 @@ export function AdminApp() {
   const [loading, setLoading] = useState(true)
   const [dataLoading, setDataLoading] = useState(true)
   const [tab, setTab] = useState('leads')
+  const [dark, setDark] = useState(true)
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', dark ? 'dark' : '')
+  }, [dark])
 
   const [leads, setLeads] = useState([])
   const [providers, setProviders] = useState([])
@@ -343,7 +348,12 @@ export function AdminApp() {
               {tab === 'users' && 'Usuários'}
             </h1>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={loadData}>↻ Atualizar</button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-ghost btn-sm" onClick={() => setDark(d => !d)}>
+              {dark ? '☀ Claro' : '☾ Escuro'}
+            </button>
+            <button className="btn btn-ghost btn-sm" onClick={loadData}>↻ Atualizar</button>
+          </div>
         </div>
 
         <div className="ad-content">
