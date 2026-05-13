@@ -78,7 +78,7 @@ function Offer() {
             <h3>Mensalidade acessível</h3>
             <div className="price">
               <span className="from">a partir de</span>
-              <span className="num">R$<span style={{ marginLeft: 4 }}>—</span></span>
+              <span className="num">R$<span style={{ marginLeft: 4 }}>97,99</span></span>
               <span className="per">/mês</span>
             </div>
             <p style={{ color: "color-mix(in oklab, var(--bg) 70%, transparent)", fontSize: 14, lineHeight: 1.55 }}>
@@ -94,7 +94,7 @@ function Offer() {
               Ser fundador Launchy <span className="arr">→</span>
             </a>
             <small style={{ marginTop: 12, fontFamily: "var(--font-mono)", fontSize: 11, opacity: .7 }}>
-              valor exato a confirmar antes do lançamento
+              Para fundadores · preço travado para sempre
             </small>
           </div>
         </div>
