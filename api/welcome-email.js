@@ -3,7 +3,7 @@
 
 export const config = { runtime: 'edge' };
 
-const FROM = 'Launchy <onboarding@resend.dev>';
+const FROM = 'Launchy <ola@launchy.sbs>';
 
 function buildHtml(nome, email) {
   const firstName = nome.split(' ')[0];
