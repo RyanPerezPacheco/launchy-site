@@ -455,6 +455,41 @@
   max-width: 28ch;
 }
 
+/* ── Pills de seleção ────────────────────────────────────────────── */
+.auth-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.auth-pill {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--fg-2);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+  white-space: nowrap;
+}
+
+.auth-pill:hover {
+  border-color: color-mix(in oklab, var(--accent) 50%, transparent);
+  color: var(--fg);
+}
+
+.auth-pill--active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+  font-weight: 500;
+}
+
+[data-theme="dark"] .auth-pill { background: var(--bg-alt); }
+[data-theme="dark"] .auth-pill--active { color: var(--accent); }
+
 /* ── Responsive ──────────────────────────────────────────────────── */
 @media (max-width: 520px) {
   .auth-card { padding: 28px 20px 24px; border-radius: 16px; }
