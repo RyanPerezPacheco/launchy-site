@@ -10,6 +10,7 @@ export default defineConfig({
         dashboard: './dashboard.html',
         auth: './auth.html',
         provider: './provider.html',
+        admin: './admin.html',
       },
     },
   },
