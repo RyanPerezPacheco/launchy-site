@@ -102,6 +102,35 @@ const NAV_SECTIONS = [
 
 const MAIN_VIEWS = ['checklist', 'prestadores', 'documentos']
 
+// Pastas padrão da tela Documentos (versão visual — dados ficam só em memória,
+// nada é enviado pro Supabase. Quando o backend estiver pronto, isso troca por
+// uma busca em `document_folders`/`documents` + upload real no Storage.)
+const DEFAULT_FOLDERS = [
+  { id: 'fiscais',      name: 'Documentos fiscais', is_default: true },
+  { id: 'boletos',      name: 'Boletos',            is_default: true },
+  { id: 'comprovantes', name: 'Comprovantes',       is_default: true },
+  { id: 'contratos',    name: 'Contratos',          is_default: true },
+  { id: 'outros',       name: 'Outros',             is_default: true },
+]
+
+const SEED_FILES = {
+  fiscais: [
+    { id: 'seed-1', file_name: 'Contrato Social.pdf', size_bytes: 245000 },
+    { id: 'seed-2', file_name: 'Cartão CNPJ.pdf', size_bytes: 180000 },
+  ],
+  boletos: [
+    { id: 'seed-3', file_name: 'Boleto DAS - Setembro 2026.pdf', size_bytes: 95000 },
+    { id: 'seed-4', file_name: 'Boleto DAS - Agosto 2026.pdf', size_bytes: 94000 },
+  ],
+  comprovantes: [
+    { id: 'seed-5', file_name: 'Comprovante de Endereço.pdf', size_bytes: 310000 },
+  ],
+  contratos: [
+    { id: 'seed-6', file_name: 'Contrato - Studio Visual.pdf', size_bytes: 420000 },
+  ],
+  outros: [],
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 function ProviderLogo({ provider, className }) {
@@ -334,6 +363,144 @@ function PrestadoresView({ onOpenModal }) {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// Tela Documentos — versão visual para a apresentação: pastas padrão já vêm
+// com alguns arquivos de exemplo, "+ Nova pasta" cria pastas customizadas e
+// "+ Enviar arquivo" aceita um arquivo real (fica só na memória da aba, dá
+// pra baixar de volta, mas nada é persistido nem enviado pra lugar nenhum).
+function DocumentosView() {
+  const [folders, setFolders] = useState(DEFAULT_FOLDERS)
+  const [openFolder, setOpenFolder] = useState(null)
+  const [filesByFolder, setFilesByFolder] = useState(SEED_FILES)
+  const [showNewFolder, setShowNewFolder] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+
+  function toggleFolder(folderId) {
+    setOpenFolder(prev => (prev === folderId ? null : folderId))
+  }
+
+  function createFolder() {
+    const name = newFolderName.trim()
+    if (!name) return
+    const id = `custom-${Date.now()}`
+    setFolders(prev => [...prev, { id, name, is_default: false }])
+    setFilesByFolder(prev => ({ ...prev, [id]: [] }))
+    setNewFolderName('')
+    setShowNewFolder(false)
+    setOpenFolder(id)
+  }
+
+  function handleUpload(folderId, file) {
+    const doc = { id: `local-${Date.now()}`, file_name: file.name, size_bytes: file.size, _localFile: file }
+    setFilesByFolder(prev => ({ ...prev, [folderId]: [doc, ...(prev[folderId] || [])] }))
+  }
+
+  function handleDownload(doc) {
+    if (!doc._localFile) return
+    const url = URL.createObjectURL(doc._localFile)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = doc.file_name
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleDeleteFile(folderId, docId) {
+    setFilesByFolder(prev => ({ ...prev, [folderId]: (prev[folderId] || []).filter(d => d.id !== docId) }))
+  }
+
+  function formatSize(bytes) {
+    if (!bytes) return ''
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  return (
+    <div>
+      <div className="db-prest-top">
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--fg-3)', margin: '0 0 4px' }}>
+          Meu negócio
+        </p>
+        <h2 className="db-checklist-h2">Documentos</h2>
+        <p className="db-checklist-sub">Guarde e organize os arquivos da sua empresa por pasta.</p>
+      </div>
+
+      <div className="db-folders-list">
+        {folders.map(folder => {
+          const open = openFolder === folder.id
+          const files = filesByFolder[folder.id] || []
+          return (
+            <div key={folder.id} className={`db-folder${open ? ' db-folder--open' : ''}`}>
+              <div className="db-folder-hd" onClick={() => toggleFolder(folder.id)}>
+                <span className="db-folder-ic">▤</span>
+                <div className="db-folder-info">
+                  <div className="db-folder-name">{folder.name}</div>
+                  <div className="db-folder-count">{files.length} arquivo{files.length === 1 ? '' : 's'}</div>
+                </div>
+                <span style={{ color: 'var(--fg-3)', fontSize: 12 }}>{open ? '▲' : '▼'}</span>
+              </div>
+
+              {open && (
+                <div className="db-folder-body">
+                  {files.length === 0 ? (
+                    <p style={{ color: 'var(--fg-3)', fontSize: 13 }}>Nenhum arquivo nesta pasta ainda.</p>
+                  ) : (
+                    <div className="db-doc-list">
+                      {files.map(doc => (
+                        <div key={doc.id} className="db-doc-item">
+                          <span className="db-doc-ic">📄</span>
+                          <div className="db-doc-info">
+                            <div className="db-doc-name">{doc.file_name}</div>
+                            <div className="db-doc-meta">{formatSize(doc.size_bytes)}</div>
+                          </div>
+                          {doc._localFile && (
+                            <button className="btn--ghost" onClick={() => handleDownload(doc)}>↓ Baixar</button>
+                          )}
+                          <button className="btn--ghost" onClick={() => handleDeleteFile(folder.id, doc.id)}>✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <label className="btn btn--sm btn--outline" style={{ cursor: 'pointer', alignSelf: 'flex-start' }}>
+                    + Enviar arquivo
+                    <input
+                      type="file"
+                      style={{ display: 'none' }}
+                      onChange={e => {
+                        const file = e.target.files[0]
+                        if (file) handleUpload(folder.id, file)
+                        e.target.value = ''
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {showNewFolder ? (
+          <div className="db-folder-new">
+            <input
+              className="db-folder-new-input"
+              placeholder="Nome da pasta"
+              value={newFolderName}
+              onChange={e => setNewFolderName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') createFolder(); if (e.key === 'Escape') setShowNewFolder(false) }}
+              autoFocus
+            />
+            <button className="btn btn--sm btn--primary" onClick={createFolder}>Criar</button>
+            <button className="btn--ghost" onClick={() => { setShowNewFolder(false); setNewFolderName('') }}>Cancelar</button>
+          </div>
+        ) : (
+          <button className="db-folder-add" onClick={() => setShowNewFolder(true)}>+ Nova pasta</button>
+        )}
+      </div>
     </div>
   )
 }
@@ -583,6 +750,7 @@ export default function Dashboard() {
   function renderView() {
     if (view === 'checklist')   return <ChecklistView onOpenModal={setModalProvider} doneIds={doneIds} onToggle={toggleStep} />
     if (view === 'prestadores') return <PrestadoresView onOpenModal={setModalProvider} />
+    if (view === 'documentos')  return <DocumentosView />
     if (MAIN_VIEWS.includes(view)) return <ComingSoon label={view.charAt(0).toUpperCase() + view.slice(1)} />
     // category views
     const catMap = {
