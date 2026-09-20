@@ -86,6 +86,8 @@ const NAV_SECTIONS = [
       { id: 'checklist',   icon: '✓', label: 'Checklist' },
       { id: 'prestadores', icon: '◈', label: 'Prestadores' },
       { id: 'documentos',  icon: '□', label: 'Documentos' },
+      { id: 'financeiro',  icon: '$', label: 'Financeiro' },
+      { id: 'perfil',      icon: '◐', label: 'Perfil da empresa' },
     ],
   },
   {
@@ -100,7 +102,7 @@ const NAV_SECTIONS = [
   },
 ]
 
-const MAIN_VIEWS = ['checklist', 'prestadores', 'documentos']
+const MAIN_VIEWS = ['checklist', 'prestadores', 'documentos', 'financeiro', 'perfil']
 
 // Pastas padrão da tela Documentos (versão visual — dados ficam só em memória,
 // nada é enviado pro Supabase. Quando o backend estiver pronto, isso troca por
@@ -130,6 +132,29 @@ const SEED_FILES = {
   ],
   outros: [],
 }
+
+// Notificações mockadas — versão visual, sem tabela no Supabase ainda.
+const MOCK_NOTIFICATIONS = [
+  { id: 1, text: 'Boleto DAS vence em 3 dias', time: 'há 1 dia', unread: true },
+  { id: 2, text: 'Seu CNPJ foi aprovado na Receita Federal', time: 'há 2 dias', unread: false },
+  { id: 3, text: 'Novo prestador disponível em Marketing: GrowthBR', time: 'há 5 dias', unread: false },
+]
+
+// Custo estimado por categoria — ilustrativo, usado só pra dar contexto ao
+// resumo financeiro a partir das etapas que o usuário já concluiu.
+const CATEGORY_COST_ESTIMATE = {
+  'Contabilidade': 89,
+  'Banco PJ': 0,
+  'Design': 249,
+  'Marketing': 390,
+  'Influencers': 0,
+  'Jurídico': 149,
+}
+
+const UPCOMING_BILLS = [
+  { id: 'b1', label: 'Boleto DAS - Outubro 2026', due: '05/10/2026', amount: 71 },
+  { id: 'b2', label: 'Mensalidade Contabilizei', due: '10/10/2026', amount: 0 },
+]
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
@@ -505,6 +530,177 @@ function DocumentosView() {
   )
 }
 
+// Tela Financeiro — versão visual: o "investido até agora" é calculado a
+// partir das etapas realmente concluídas no checklist (dado real do app),
+// cruzado com uma estimativa de custo por categoria (ilustrativa). O resto
+// (economia com parceiros, próximos vencimentos) é mockado, no mesmo
+// espírito da tela Documentos — sem depender do Supabase.
+function FinanceiroView({ doneIds }) {
+  const investedSteps = STEPS.filter(s => doneIds.includes(s.id))
+  const investedTotal = investedSteps.reduce((sum, s) => sum + (CATEGORY_COST_ESTIMATE[s.cat] || 0), 0)
+  const savedTotal = 640
+
+  return (
+    <div>
+      <div className="db-prest-top">
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--fg-3)', margin: '0 0 4px' }}>
+          Meu negócio
+        </p>
+        <h2 className="db-checklist-h2">Financeiro</h2>
+        <p className="db-checklist-sub">Um resumo do que você já investiu e economizou com a Launchy.</p>
+      </div>
+
+      <div className="db-fin-grid">
+        <div className="db-fin-card">
+          <div className="db-fin-label">Investido até agora</div>
+          <div className="db-fin-value">R$ {investedTotal.toLocaleString('pt-BR')}</div>
+          <div className="db-fin-hint">{investedSteps.length} etapa{investedSteps.length === 1 ? '' : 's'} concluída{investedSteps.length === 1 ? '' : 's'}</div>
+        </div>
+        <div className="db-fin-card">
+          <div className="db-fin-label">Economia com parceiros</div>
+          <div className="db-fin-value" style={{ color: 'var(--accent-deep)' }}>R$ {savedTotal}</div>
+          <div className="db-fin-hint">em descontos exclusivos Launchy</div>
+        </div>
+        <div className="db-fin-card">
+          <div className="db-fin-label">Próximo vencimento</div>
+          <div className="db-fin-value" style={{ fontSize: 22 }}>{UPCOMING_BILLS[0].due}</div>
+          <div className="db-fin-hint">{UPCOMING_BILLS[0].label}</div>
+        </div>
+      </div>
+
+      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--fg-3)', margin: '28px 0 10px' }}>
+        Próximos vencimentos
+      </p>
+      <div className="db-doc-list">
+        {UPCOMING_BILLS.map(b => (
+          <div key={b.id} className="db-doc-item">
+            <span className="db-doc-ic">📅</span>
+            <div className="db-doc-info">
+              <div className="db-doc-name">{b.label}</div>
+              <div className="db-doc-meta">Vence em {b.due}</div>
+            </div>
+            <span className="db-pill db-pill--muted">{b.amount > 0 ? `R$ ${b.amount}` : 'Grátis'}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Tela Perfil da empresa — mostra os dados reais já carregados no perfil do
+// usuário (nome, e-mail, empresa, CNPJ, telefone, quando existirem) e
+// permite "editar" tipo de empresa/endereço só localmente, sem persistir —
+// igual ao restante das telas visuais desta versão.
+function PerfilView({ user }) {
+  const [tipoEmpresa, setTipoEmpresa] = useState('ME')
+  const [endereco, setEndereco] = useState('')
+  const [saved, setSaved] = useState(false)
+
+  function handleSave() {
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2500)
+  }
+
+  return (
+    <div>
+      <div className="db-prest-top">
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--fg-3)', margin: '0 0 4px' }}>
+          Meu negócio
+        </p>
+        <h2 className="db-checklist-h2">Perfil da empresa</h2>
+        <p className="db-checklist-sub">Dados cadastrados na sua conta Launchy.</p>
+      </div>
+
+      <div className="pm-meta" style={{ maxWidth: 480, marginBottom: 24 }}>
+        <div className="pm-meta-item">
+          <span className="pm-meta-label">Responsável</span>
+          <span className="pm-meta-val">{user?.name || '—'}</span>
+        </div>
+        <div className="pm-meta-item">
+          <span className="pm-meta-label">E-mail</span>
+          <span className="pm-meta-val">{user?.email || '—'}</span>
+        </div>
+        <div className="pm-meta-item">
+          <span className="pm-meta-label">Empresa</span>
+          <span className="pm-meta-val">{user?.empresa || 'Ainda não informado'}</span>
+        </div>
+        <div className="pm-meta-item">
+          <span className="pm-meta-label">CNPJ</span>
+          <span className="pm-meta-val">{user?.cnpj || 'Ainda não informado'}</span>
+        </div>
+        <div className="pm-meta-item">
+          <span className="pm-meta-label">Telefone</span>
+          <span className="pm-meta-val">{user?.phone || 'Ainda não informado'}</span>
+        </div>
+      </div>
+
+      <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--fg-3)', margin: '0 0 10px' }}>
+        Editar
+      </p>
+      <div style={{ maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div className="db-folder-new">
+          <select
+            className="db-folder-new-input"
+            value={tipoEmpresa}
+            onChange={e => setTipoEmpresa(e.target.value)}
+          >
+            <option value="MEI">MEI</option>
+            <option value="ME">ME</option>
+            <option value="EPP">EPP</option>
+          </select>
+        </div>
+        <div className="db-folder-new">
+          <input
+            className="db-folder-new-input"
+            placeholder="Endereço da empresa"
+            value={endereco}
+            onChange={e => setEndereco(e.target.value)}
+          />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button className="btn btn--sm btn--primary" onClick={handleSave}>Salvar alterações</button>
+          {saved && <span style={{ color: 'var(--accent-deep)', fontSize: 12 }}>✓ Salvo</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Sino de notificações — dropdown mockado, sem tabela no Supabase ainda.
+function NotificationsBell() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="db-notif-wrap">
+      <button
+        className="db-icon-btn"
+        title="Notificações"
+        style={{ fontSize: 14 }}
+        onClick={() => setOpen(o => !o)}
+      >
+        🔔
+      </button>
+      {open && (
+        <>
+          <div className="db-notif-backdrop" onClick={() => setOpen(false)} />
+          <div className="db-notif-panel">
+            <div className="db-notif-hd">Notificações</div>
+            {MOCK_NOTIFICATIONS.map(n => (
+              <div key={n.id} className={`db-notif-item${n.unread ? ' db-notif-item--unread' : ''}`}>
+                <span className="db-notif-dot" />
+                <div>
+                  <div className="db-notif-text">{n.text}</div>
+                  <div className="db-notif-time">{n.time}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
 function ComingSoon({ label }) {
   return (
     <div className="db-coming-soon">
@@ -686,6 +882,8 @@ function TopBar({ view, dark, toggleDark }) {
     checklist:     'Checklist',
     prestadores:   'Prestadores',
     documentos:    'Documentos',
+    financeiro:    'Financeiro',
+    perfil:        'Perfil da empresa',
     contabilidade: 'Contabilidade',
     banco:         'Banco PJ',
     design:        'Design',
@@ -705,7 +903,7 @@ function TopBar({ view, dark, toggleDark }) {
         >
           {dark ? '☀' : '☾'}
         </button>
-        <button className="db-icon-btn" title="Notificações" style={{ fontSize: 14 }}>🔔</button>
+        <NotificationsBell />
         <div className="db-topbar-av">R</div>
       </div>
     </header>
@@ -751,6 +949,8 @@ export default function Dashboard() {
     if (view === 'checklist')   return <ChecklistView onOpenModal={setModalProvider} doneIds={doneIds} onToggle={toggleStep} />
     if (view === 'prestadores') return <PrestadoresView onOpenModal={setModalProvider} />
     if (view === 'documentos')  return <DocumentosView />
+    if (view === 'financeiro')  return <FinanceiroView doneIds={doneIds} />
+    if (view === 'perfil')      return <PerfilView user={user} />
     if (MAIN_VIEWS.includes(view)) return <ComingSoon label={view.charAt(0).toUpperCase() + view.slice(1)} />
     // category views
     const catMap = {
