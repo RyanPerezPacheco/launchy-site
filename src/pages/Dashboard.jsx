@@ -338,6 +338,192 @@ function PrestadoresView({ onOpenModal }) {
   )
 }
 
+function DocumentosView({ user }) {
+  const [folders, setFolders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [openFolder, setOpenFolder] = useState(null)
+  const [filesByFolder, setFilesByFolder] = useState({})
+  const [loadingFiles, setLoadingFiles] = useState({})
+  const [uploadingFolder, setUploadingFolder] = useState(null)
+  const [showNewFolder, setShowNewFolder] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+
+  useEffect(() => {
+    if (!user) return
+    supabase.from('document_folders')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('is_default', { ascending: false })
+      .order('created_at')
+      .then(({ data }) => { setFolders(data || []); setLoading(false) })
+  }, [user])
+
+  function loadFiles(folderId) {
+    setLoadingFiles(prev => ({ ...prev, [folderId]: true }))
+    supabase.from('documents')
+      .select('*')
+      .eq('folder_id', folderId)
+      .order('created_at', { ascending: false })
+      .then(({ data }) => {
+        setFilesByFolder(prev => ({ ...prev, [folderId]: data || [] }))
+        setLoadingFiles(prev => ({ ...prev, [folderId]: false }))
+      })
+  }
+
+  function toggleFolder(folderId) {
+    const next = openFolder === folderId ? null : folderId
+    setOpenFolder(next)
+    if (next && !filesByFolder[folderId]) loadFiles(folderId)
+  }
+
+  async function createFolder() {
+    const name = newFolderName.trim()
+    if (!name || !user) return
+    const { data, error } = await supabase
+      .from('document_folders')
+      .insert({ user_id: user.id, name, is_default: false })
+      .select()
+      .single()
+    if (!error && data) {
+      setFolders(prev => [...prev, data])
+      setNewFolderName('')
+      setShowNewFolder(false)
+    }
+  }
+
+  async function handleUpload(folderId, file) {
+    if (!user) return
+    setUploadingFolder(folderId)
+    const path = `${user.id}/${folderId}/${Date.now()}_${file.name}`
+    const { error: uploadError } = await supabase.storage.from('client-documents').upload(path, file)
+    if (!uploadError) {
+      const { data } = await supabase.from('documents')
+        .insert({
+          user_id: user.id,
+          folder_id: folderId,
+          file_name: file.name,
+          storage_path: path,
+          size_bytes: file.size,
+          mime_type: file.type,
+        })
+        .select()
+        .single()
+      if (data) setFilesByFolder(prev => ({ ...prev, [folderId]: [data, ...(prev[folderId] || [])] }))
+    }
+    setUploadingFolder(null)
+  }
+
+  async function handleDownload(doc) {
+    const { data } = await supabase.storage.from('client-documents').createSignedUrl(doc.storage_path, 60)
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  }
+
+  async function handleDeleteFile(doc) {
+    await supabase.storage.from('client-documents').remove([doc.storage_path])
+    await supabase.from('documents').delete().eq('id', doc.id)
+    setFilesByFolder(prev => ({ ...prev, [doc.folder_id]: (prev[doc.folder_id] || []).filter(d => d.id !== doc.id) }))
+  }
+
+  function formatSize(bytes) {
+    if (!bytes) return ''
+    if (bytes < 1024) return `${bytes} B`
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  }
+
+  return (
+    <div>
+      <div className="db-prest-top">
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--fg-3)', margin: '0 0 4px' }}>
+          Meu negócio
+        </p>
+        <h2 className="db-checklist-h2">Documentos</h2>
+        <p className="db-checklist-sub">Guarde e organize os arquivos da sua empresa por pasta.</p>
+      </div>
+
+      {loading ? (
+        <p style={{ color: 'var(--fg-3)', fontSize: 14, marginTop: 24 }}>Carregando pastas…</p>
+      ) : (
+        <div className="db-folders-list">
+          {folders.map(folder => {
+            const open = openFolder === folder.id
+            const files = filesByFolder[folder.id] || []
+            return (
+              <div key={folder.id} className={`db-folder${open ? ' db-folder--open' : ''}`}>
+                <div className="db-folder-hd" onClick={() => toggleFolder(folder.id)}>
+                  <span className="db-folder-ic">▤</span>
+                  <div className="db-folder-info">
+                    <div className="db-folder-name">{folder.name}</div>
+                    {filesByFolder[folder.id] && (
+                      <div className="db-folder-count">{files.length} arquivo{files.length === 1 ? '' : 's'}</div>
+                    )}
+                  </div>
+                  <span style={{ color: 'var(--fg-3)', fontSize: 12 }}>{open ? '▲' : '▼'}</span>
+                </div>
+
+                {open && (
+                  <div className="db-folder-body">
+                    {loadingFiles[folder.id] ? (
+                      <p style={{ color: 'var(--fg-3)', fontSize: 13 }}>Carregando arquivos…</p>
+                    ) : files.length === 0 ? (
+                      <p style={{ color: 'var(--fg-3)', fontSize: 13 }}>Nenhum arquivo nesta pasta ainda.</p>
+                    ) : (
+                      <div className="db-doc-list">
+                        {files.map(doc => (
+                          <div key={doc.id} className="db-doc-item">
+                            <span className="db-doc-ic">📄</span>
+                            <div className="db-doc-info">
+                              <div className="db-doc-name">{doc.file_name}</div>
+                              <div className="db-doc-meta">{formatSize(doc.size_bytes)}</div>
+                            </div>
+                            <button className="btn--ghost" onClick={() => handleDownload(doc)}>↓ Baixar</button>
+                            <button className="btn--ghost" onClick={() => handleDeleteFile(doc)}>✕</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <label className="btn btn--sm btn--outline" style={{ cursor: 'pointer', alignSelf: 'flex-start' }}>
+                      {uploadingFolder === folder.id ? 'Enviando…' : '+ Enviar arquivo'}
+                      <input
+                        type="file"
+                        style={{ display: 'none' }}
+                        disabled={uploadingFolder === folder.id}
+                        onChange={e => {
+                          const file = e.target.files[0]
+                          if (file) handleUpload(folder.id, file)
+                          e.target.value = ''
+                        }}
+                      />
+                    </label>
+                  </div>
+                )}
+              </div>
+            )
+          })}
+
+          {showNewFolder ? (
+            <div className="db-folder-new">
+              <input
+                className="db-folder-new-input"
+                placeholder="Nome da pasta"
+                value={newFolderName}
+                onChange={e => setNewFolderName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') createFolder(); if (e.key === 'Escape') setShowNewFolder(false) }}
+                autoFocus
+              />
+              <button className="btn btn--sm btn--primary" onClick={createFolder}>Criar</button>
+              <button className="btn--ghost" onClick={() => { setShowNewFolder(false); setNewFolderName('') }}>Cancelar</button>
+            </div>
+          ) : (
+            <button className="db-folder-add" onClick={() => setShowNewFolder(true)}>+ Nova pasta</button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ComingSoon({ label }) {
   return (
     <div className="db-coming-soon">
@@ -583,6 +769,7 @@ export default function Dashboard() {
   function renderView() {
     if (view === 'checklist')   return <ChecklistView onOpenModal={setModalProvider} doneIds={doneIds} onToggle={toggleStep} />
     if (view === 'prestadores') return <PrestadoresView onOpenModal={setModalProvider} />
+    if (view === 'documentos')  return <DocumentosView user={user} />
     if (MAIN_VIEWS.includes(view)) return <ComingSoon label={view.charAt(0).toUpperCase() + view.slice(1)} />
     // category views
     const catMap = {
